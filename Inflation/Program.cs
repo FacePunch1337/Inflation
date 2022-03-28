@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,6 +10,70 @@ namespace Inflation
 {
     class Program
     {
+        #region CallBack
+        private static async Task<String> ReadFileAsync(string path)
+        {
+
+            return await Task.Run(() =>
+            {
+                var sb = new StringBuilder();
+                using (var reader = new StreamReader(path))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        sb.AppendLine(reader.ReadLine());
+                    }
+                }
+                return sb.ToString();
+            });
+        }
+
+        private static async Task<dynamic> ParseIniAsync(string str)
+        {
+            return await Task.Run(() =>
+            {
+                if (str == null)
+                    return null;
+                var lines = str.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                var ret = new Dictionary<String, int>();
+                foreach (var line in lines)
+                {
+                    var data = line.Split('=');
+                    if (data.Length != 2) throw new Exception("Invalid ini format");
+                    ret[data[0].Trim()] = int.Parse(data[1].Trim());
+                }
+                return ret;
+            });
+        }
+
+        // HW
+        private static dynamic Display(dynamic obj)
+        {
+            if (obj != null)
+            {
+                foreach (var item in obj)
+                {
+                    Console.WriteLine(item);
+                }
+                return obj;
+            }
+            return null;
+        }
+        static async Task Main(string[] args)
+        {
+            //String content = await ReadFileAsync("./data.ini");
+            //var dic = await ParseIniAsync(content);
+            var task = ReadFileAsync("data.ini").
+
+                ContinueWith(task => ParseIniAsync(task.Result).Result).
+                ContinueWith(task => Display(task.Result)).Result;
+            
+            var dic = await task;
+            Console.WriteLine(dic["x"]);
+        }
+        #endregion
+
+        #region Inflation
         private static String ChooseMonth(int monthNum)
         {
             switch (monthNum)
@@ -64,7 +129,7 @@ namespace Inflation
             return price_async;
         }
 
-        static async Task Main(string[] args)
+        static async Task Main_Inflation(string[] args)
         {
             Console.Write("Enter a start price: ");
             price = Convert.ToSingle(Console.ReadLine());
@@ -87,4 +152,5 @@ namespace Inflation
         }
 
     }
+    #endregion
 }
